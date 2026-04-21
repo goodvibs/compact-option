@@ -1,0 +1,7 @@
+[package]
+name = "compact-option-proc-macro"
+version  = { workspace = true }
+edition  = { workspace = true }
+
+[dependencies]
+compact-option = { workspace = true }

@@ -1,0 +1,4 @@
+[package]
+name = "compact-option"
+version  = { workspace = true }
+edition  = { workspace = true }
