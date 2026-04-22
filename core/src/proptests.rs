@@ -1,6 +1,7 @@
 use core::hash::{Hash, Hasher};
 
 use proptest::prelude::*;
+use proptest::test_runner::Config;
 
 use crate::fixtures::{ByteSlot, Id, OptByte, OptId, OptSmall, SmallEnum};
 
@@ -9,6 +10,13 @@ fn arb_small_enum() -> impl Strategy<Value = SmallEnum> {
 }
 
 proptest! {
+    // Miri runs tests with filesystem isolation; proptest's default file
+    // persistence uses `getcwd` when resolving `proptest-regressions/`, which
+    // Miri rejects.
+    #![proptest_config(Config {
+        failure_persistence: None,
+        .. Config::default()
+    })]
     #[test]
     fn some_try_unwrap_roundtrip(x in arb_small_enum()) {
         let o = OptSmall::some(x);
