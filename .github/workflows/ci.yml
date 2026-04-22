@@ -3,6 +3,29 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      release:
+        type: boolean
+        default: false
+        description: After CI jobs pass, bump semver and push commit + tag vX.Y.Z (main only)
+      bump:
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+        description: Semver bump level (used only when release is enabled)
+      publish:
+        type: boolean
+        default: false
+        description: After CI jobs pass, run crates.io publish (only when the workflow is run for a v* tag ref)
+      publish_dry_run:
+        type: boolean
+        default: true
+        description: If publishing is enabled, pass --dry-run to cargo publish (uncheck for real publish)
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -77,3 +100,79 @@ jobs:
         with:
           name: coverage-html
           path: target/llvm-cov/html
+
+  release:
+    needs: [lint-and-test, miri, coverage]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.release == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      - name: Bump workspace version and tag
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          line=$(grep -E '^version = "[0-9]+\.[0-9]+\.[0-9]+"' Cargo.toml | head -n1)
+          cur=$(echo "$line" | sed -E 's/^version = "([^"]+)".*$/\1/')
+          IFS=. read -r major minor patch <<<"$cur"
+          case "$BUMP" in
+            patch) patch=$((patch + 1)) ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            *) echo "unknown bump: $BUMP"; exit 1 ;;
+          esac
+          new="${major}.${minor}.${patch}"
+          echo "Bumping $cur -> $new"
+
+          sed -i.bak -E "s/^version = \"[0-9]+\\.[0-9]+\\.[0-9]+\"/version = \"${new}\"/" Cargo.toml
+          rm -f Cargo.toml.bak
+
+          git add Cargo.toml
+          git commit -m "chore(release): v${new}"
+          git tag "v${new}"
+          git push origin HEAD:main
+          git push origin "refs/tags/v${new}"
+
+  publish:
+    needs: [lint-and-test, miri, coverage]
+    if: github.event_name == 'workflow_dispatch' && github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v') && inputs.publish == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-rust
+
+      - name: Log in to crates.io
+        if: inputs.publish_dry_run == false
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CARGO_REGISTRY_TOKEN:-}" ]; then
+            echo "CARGO_REGISTRY_TOKEN secret is required when publish_dry_run is disabled."
+            exit 1
+          fi
+          printf '%s\n' "$CARGO_REGISTRY_TOKEN" | cargo login --token -
+
+      - name: Publish compact-option-proc-macro
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "${{ inputs.publish_dry_run }}" = "true" ]; then args+=(--dry-run); fi
+          cargo publish -p compact-option-proc-macro "${args[@]}"
+
+      - name: Publish compact-option
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "${{ inputs.publish_dry_run }}" = "true" ]; then args+=(--dry-run); fi
+          cargo publish -p compact-option "${args[@]}"
