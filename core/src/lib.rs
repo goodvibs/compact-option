@@ -158,6 +158,10 @@ where
         if self.raw_value == T::UNUSED_SENTINEL {
             None
         } else {
+            debug_assert!(
+                self.raw_value != T::UNUSED_SENTINEL,
+                "CompactOption::try_unwrap: raw must differ from UNUSED_SENTINEL"
+            );
             // SAFETY: `CompactRepr` requires non-sentinel `R` values used as
             // `Some` to transmute to a bit-valid `T`.
             Some(unsafe { self.unwrap_unchecked() })
@@ -207,6 +211,10 @@ where
     where
         T: TransmuteFrom<R, { TRANSMUTATION_ASSUMPTION }>,
     {
+        debug_assert!(
+            self.raw_value != T::UNUSED_SENTINEL,
+            "CompactOption::unwrap_unchecked: self must not be NONE (raw != UNUSED_SENTINEL)"
+        );
         unsafe { <T as TransmuteFrom<R, { TRANSMUTATION_ASSUMPTION }>>::transmute(self.raw_value) }
     }
 }
