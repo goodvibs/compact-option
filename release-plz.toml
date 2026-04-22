@@ -1,0 +1,20 @@
+# release-plz configuration.
+# See https://release-plz.ieni.dev/docs/config for the full option list.
+#
+# release-plz handles the workspace-version-inheritance limitation in Cargo:
+# it keeps the `version = "..."` in `[workspace.dependencies]` self-refs in
+# lockstep with `[workspace.package].version`, and publishes inter-dependent
+# workspace crates in the correct topological order.
+
+[workspace]
+changelog_update = true
+git_release_enable = true
+semver_check = true
+publish_allow_dirty = false
+
+[[package]]
+name = "compact-option-proc-macro"
+publish_no_verify = false
+
+[[package]]
+name = "compact-option"

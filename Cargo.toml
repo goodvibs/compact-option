@@ -9,8 +9,10 @@ license = "MIT"
 repository = "https://github.com/goodvibs/compact-option"
 
 [workspace.dependencies]
-compact-option = { path = "core/" }
-compact-option-proc-macro = { path = "proc-macro/" }
+# `version` is required for publishing to crates.io; the `path` is used for
+# local workspace builds. release-plz keeps the version in lockstep with
+# `[workspace.package].version` on every Release PR.
+compact-option-proc-macro = { path = "proc-macro/", version = "0.1.0" }
 proptest = "1.11"
 proc-macro2 = "1"
 quote = "1"
