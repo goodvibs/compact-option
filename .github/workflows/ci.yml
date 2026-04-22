@@ -8,23 +8,26 @@ env:
   RUSTFLAGS: -Dwarnings
 
 jobs:
-  test:
+  # Toolchain channel and components come only from rust-toolchain.toml at the repo root.
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2026-04-20
-          components: rustfmt, clippy
+      - uses: dtolnay/rust-toolchain@stable
+
       - run: cargo test --workspace
 
-  miri:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
+      - name: Miri (compact-option)
+        run: |
+          yes | cargo miri setup
+          cargo miri test -p compact-option
+
+      - uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Coverage (HTML + doctests)
+        run: cargo llvm-cov test --workspace --html --doctests
+
+      - uses: actions/upload-artifact@v4
         with:
-          toolchain: nightly-2026-04-20
-          components: miri, rust-src
-      - run: yes | cargo miri setup
-      - run: cargo miri test -p compact-option
+          name: coverage-html
+          path: target/llvm-cov/html
