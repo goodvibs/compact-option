@@ -273,6 +273,9 @@ mod fixtures {
 }
 
 #[cfg(test)]
+mod proptests;
+
+#[cfg(test)]
 use core::hash::{Hash, Hasher};
 
 #[cfg(test)]

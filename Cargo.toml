@@ -8,3 +8,4 @@ edition = "2024"
 
 [workspace.dependencies]
 compact-option  = { path = "core/" }
+proptest = "1.11"
