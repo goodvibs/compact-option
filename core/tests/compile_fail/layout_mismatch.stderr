@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: transparent newtype size must match `R` (layout identity for `CompactRepr`)
+ --> tests/compile_fail/layout_mismatch.rs:7:1
+  |
+7 | #[compact_option(repr(R = u8, sentinel = 0xFF))]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ evaluation of `_` failed here

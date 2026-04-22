@@ -3,5 +3,14 @@ name = "compact-option"
 version  = { workspace = true }
 edition  = { workspace = true }
 
+[features]
+default = []
+macros = ["dep:compact-option-proc-macro"]
+
+[dependencies]
+compact-option-proc-macro = { workspace = true, optional = true }
+
 [dev-dependencies]
+compact-option-proc-macro = { workspace = true }
 proptest = { workspace = true }
+trybuild = { workspace = true }

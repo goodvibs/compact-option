@@ -7,5 +7,10 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-compact-option  = { path = "core/" }
+compact-option = { path = "core/" }
+compact-option-proc-macro = { path = "proc-macro/" }
 proptest = "1.11"
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full", "extra-traits"] }
+trybuild = "1"

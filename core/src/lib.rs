@@ -54,9 +54,23 @@ mod __layout {
 /// After changing an `unsafe impl CompactRepr`, run `cargo miri test` (or your
 /// project’s Miri CI) to exercise transmute-based paths under the stacked
 /// borrows / provenance model.
+///
+/// ## Procedural macro
+///
+/// Enable the **`macros`** crate feature for a re-exported `#[compact_option(...)]`
+/// attribute, or depend on the **`compact-option-proc-macro`** crate directly.
+///
+/// The `#[compact_option(repr(R = …, sentinel = …))]` macro only emits `unsafe impl CompactRepr`;
+/// it does **not** validate `#[repr]`, discriminants, or sentinel collisions. Structs additionally
+/// get `size_of` / `align_of` checks against `R`. See the proc-macro crate’s rustdoc and Miri for
+/// safety review.
 pub const unsafe trait CompactRepr<R>: Copy + Sized {
     const UNUSED_SENTINEL: R;
 }
+
+/// When built with the `macros` feature, re-exports the `#[compact_option(...)]` attribute.
+#[cfg(feature = "macros")]
+pub use compact_option_proc_macro::compact_option;
 
 /// Stores either [`Self::NONE`] or a `Some` payload in a single [`Copy`] `R`.
 ///
