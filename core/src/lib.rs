@@ -284,8 +284,8 @@ use fixtures::{BadSentinel, ByteSlot, Id, OptBad, OptByte, OptId, OptSmall, Smal
 #[cfg(test)]
 #[test]
 fn const_predicates_on_none() {
-    assert!(fixtures::NONE_IS_NONE);
-    assert!(fixtures::NONE_NOT_SOME);
+    const { assert!(fixtures::NONE_IS_NONE) };
+    const { assert!(fixtures::NONE_NOT_SOME) };
     assert!(OptSmall::some(SmallEnum::Var1).is_some());
     assert!(!OptSmall::some(SmallEnum::Var1).is_none());
     assert!(OptSmall::some(SmallEnum::Var2).is_some());
@@ -302,7 +302,7 @@ fn repr_u8_enum_roundtrip_and_combinators() {
 
     let bar = OptSmall::some(SmallEnum::Var2);
     assert_eq!(bar.map(|x| x as u8), Some(1u8));
-    assert_eq!(bar.and_then(|x| Some(x)), Some(SmallEnum::Var2));
+    assert_eq!(bar.and_then(Some), Some(SmallEnum::Var2));
     assert_eq!(bar.and_then(|_| None::<()>), None);
 
     assert_eq!(OptSmall::NONE.try_unwrap(), None);

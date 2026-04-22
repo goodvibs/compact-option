@@ -43,7 +43,7 @@ proptest! {
 
     #[test]
     fn and_then_some_identity(x in arb_small_enum()) {
-        let o = OptSmall::some(x).and_then(|v| Some(v));
+        let o = OptSmall::some(x).and_then(Some);
         prop_assert_eq!(o, Some(x));
     }
 
