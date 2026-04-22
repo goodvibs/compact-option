@@ -1,0 +1,6 @@
+name: Setup Rust
+description: Install the Rust toolchain from rust-toolchain.toml at the repository root.
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@stable
