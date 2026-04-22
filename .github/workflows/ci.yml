@@ -15,7 +15,7 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Lint PR title (conventional commits)
         if: github.event_name == 'pull_request'
@@ -46,7 +46,7 @@ jobs:
   miri:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-rust
       - name: Miri (compact-option)
         run: |
@@ -56,12 +56,12 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-rust
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Coverage (HTML + doctests)
         run: cargo llvm-cov test --workspace --html --doctests
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: coverage-html
           path: target/llvm-cov/html
