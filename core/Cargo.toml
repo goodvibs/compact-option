@@ -1,7 +1,14 @@
 [package]
 name = "compact-option"
-version  = { workspace = true }
-edition  = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+description = "Compact optional storage that uses exactly as much memory as raw `R`; intended for `R` with spare bit patterns (primarily `repr(u8)` enums with <256 variants)."
+license = { workspace = true }
+repository = { workspace = true }
+documentation = "https://docs.rs/compact-option"
+readme = "README.md"
+keywords = ["option", "enum", "sentinel", "transmute", "compact"]
+categories = ["data-structures", "memory-management"]
 
 [features]
 default = []

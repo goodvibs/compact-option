@@ -2,7 +2,13 @@
 name = "compact-option-proc-macro"
 version = { workspace = true }
 edition = { workspace = true }
-description = "Attribute macro emitting `unsafe impl compact_option::CompactRepr` for enums and structs (minimal parsing; layout asserts for structs)."
+description = "Attribute macro for compact-option's exact-size-as-`R` sentinel encoding, intended for `R` with spare bit patterns (primarily `repr(u8)` enums with <256 variants)."
+license = { workspace = true }
+repository = { workspace = true }
+documentation = "https://docs.rs/compact-option-proc-macro"
+readme = "README.md"
+keywords = ["compact-option", "macro", "repr", "sentinel"]
+categories = ["development-tools::procedural-macro-helpers"]
 
 [lib]
 proc-macro = true

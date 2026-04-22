@@ -4,6 +4,19 @@
 #![feature(transmutability)]
 #![allow(incomplete_features)]
 
+//! Compact optional storage that uses exactly as much memory as raw `R`: a [`Copy`] `Some` payload
+//! or [`CompactOption::NONE`] inside one raw value `R`, using the unsafe [`CompactRepr`] contract.
+//!
+//! Intended for raw representations `R` with spare bit patterns. Primary use case:
+//! `#[repr(u8)]` enums with fewer than 256 variants.
+//!
+//! - [`CompactOption`] is the safe-ish wrapper API (transmute-based; see docs and Miri).
+//! - Implement [`CompactRepr`] manually, or enable the **`macros`** feature for
+//!   `#[compact_option(repr(R = …, sentinel = …))]` (see the `compact-option-proc-macro` crate).
+//!
+//! **Toolchain:** this crate pins a nightly toolchain via `rust-toolchain.toml` and relies on
+//! unstable features.
+
 use core::marker::PhantomData;
 use core::mem::{Assume, TransmuteFrom};
 
@@ -65,6 +78,14 @@ mod __layout {
 /// get `size_of` / `align_of` checks against `R`. See the proc-macro crate’s rustdoc and Miri for
 /// safety review.
 pub const unsafe trait CompactRepr<R>: Copy + Sized {
+    /// Raw value reserved for [`CompactOption::NONE`].
+    ///
+    /// # Safety (encoding)
+    ///
+    /// This bit pattern must **never** equal the transmuted `R` encoding of any `T` you store via
+    /// [`CompactOption::some`]. If it does, `NONE` and `Some` collide: [`CompactOption::is_none`]
+    /// may return `true` for a value you constructed with `some`, and [`CompactOption::try_unwrap`]
+    /// returns `None`.
     const UNUSED_SENTINEL: R;
 }
 
@@ -74,10 +95,13 @@ pub use compact_option_proc_macro::compact_option;
 
 /// Stores either [`Self::NONE`] or a `Some` payload in a single [`Copy`] `R`.
 ///
-/// ## Compile-time checks
+/// ## Layout checks
 ///
-/// `R` and `T` must have identical size and alignment; this is enforced when
-/// [`Self::NONE`] is evaluated in a const context:
+/// `R` and `T` must have identical size and alignment. The same layout assertions run when
+/// evaluating [`Self::NONE`] in a `const` context and when calling [`Self::some`] (so `some`
+/// cannot silently skip layout validation). A plain `let _ = Self::NONE` in non-const code may
+/// not const-evaluate [`Self::NONE`]; prefer `const { CompactOption::<R, T>::NONE }` or similar
+/// if you need the check guaranteed at compile time.
 ///
 /// ```compile_fail
 /// use compact_option::{CompactOption, CompactRepr};
@@ -125,9 +149,11 @@ where
     R: Copy + PartialEq,
     T: CompactRepr<R>,
 {
-    /// `LayoutInvariant` runs here; using `NONE` in a `const` (including this
-    /// associated const) ensures size/align of `T` and `R` are checked. A plain
-    /// `let _ = Self::NONE` inside non-const `main` may not const-evaluate it.
+    /// Sentinel-backed empty value: the stored `R` equals [`CompactRepr::UNUSED_SENTINEL`].
+    ///
+    /// Layout of `T` and `R` is checked here (see struct-level **Layout checks**). Using `NONE` in
+    /// a `const` context ensures that check runs; a plain `let _ = Self::NONE` in non-const `main`
+    /// may not const-evaluate it.
     pub const NONE: Self = {
         let () = __layout::LayoutInvariant::<R, T>::CHECK;
         Self {
@@ -136,6 +162,18 @@ where
         }
     };
 
+    /// Construct a `Some` by transmuting `T` → `R` using the same `Assume` bundle as
+    /// [`try_unwrap`](Self::try_unwrap) / [`unwrap_unchecked`](Self::unwrap_unchecked).
+    ///
+    /// Layout of `T` and `R` is asserted here (same as [`Self::NONE`]).
+    ///
+    /// # Sentinel collisions
+    ///
+    /// If `value`’s transmuted bit pattern equals [`CompactRepr::UNUSED_SENTINEL`], this value is
+    /// indistinguishable from [`Self::NONE`]: [`is_none`](Self::is_none) may be `true` and
+    /// [`try_unwrap`](Self::try_unwrap) returns `None`. A correct [`CompactRepr`] must rule that
+    /// out for all stored `T`.
+    ///
     /// Not `const` because `TransmuteFrom::transmute` is not a `const fn` on this toolchain.
     pub fn some(value: T) -> Self
     where
@@ -151,6 +189,7 @@ where
         }
     }
 
+    /// Returns `true` when this value encodes [`Self::NONE`] (raw equals [`CompactRepr::UNUSED_SENTINEL`]).
     pub const fn is_none(self) -> bool
     where
         R: [const] PartialEq,
@@ -158,6 +197,7 @@ where
         self.raw_value == T::UNUSED_SENTINEL
     }
 
+    /// Returns `true` when this value encodes `Some` (raw differs from [`CompactRepr::UNUSED_SENTINEL`]).
     pub const fn is_some(self) -> bool
     where
         R: [const] PartialEq,
@@ -165,6 +205,8 @@ where
         !self.is_none()
     }
 
+    /// If this is `Some`, transmute the raw `R` back to `T`. If raw equals [`CompactRepr::UNUSED_SENTINEL`],
+    /// returns `None` (including sentinel-collision cases described on [`Self::some`]).
     pub fn try_unwrap(self) -> Option<T>
     where
         T: TransmuteFrom<R, { TRANSMUTATION_ASSUMPTION }>,
@@ -182,6 +224,7 @@ where
         }
     }
 
+    /// Like [`Option::unwrap`]: returns the payload or panics if this is [`Self::NONE`].
     pub fn unwrap(self) -> T
     where
         T: TransmuteFrom<R, { TRANSMUTATION_ASSUMPTION }>,
@@ -192,6 +235,7 @@ where
         }
     }
 
+    /// Like [`Option::expect`]: returns the payload or panics with `msg` if this is [`Self::NONE`].
     pub fn expect(self, msg: &str) -> T
     where
         T: TransmuteFrom<R, { TRANSMUTATION_ASSUMPTION }>,
@@ -202,6 +246,7 @@ where
         }
     }
 
+    /// If `Some`, applies `f` to the payload; if [`Self::NONE`], returns `None` without calling `f`.
     pub fn map<U, F>(self, f: F) -> Option<U>
     where
         F: FnOnce(T) -> U,
@@ -210,6 +255,7 @@ where
         self.try_unwrap().map(f)
     }
 
+    /// If `Some`, runs `f` on the payload; if [`Self::NONE`], returns `None` without calling `f`.
     pub fn and_then<U, F>(self, f: F) -> Option<U>
     where
         F: FnOnce(T) -> Option<U>,
