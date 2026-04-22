@@ -1,9 +1,9 @@
 //! Attribute macro `#[compact_option(repr(R = …, sentinel = …))]` for emitting
 //! `CompactRepr` for enums and structs.
 //!
-//! Used with `CompactOption` to encode `NONE`/`Some(T)` in exactly as much memory as raw `R`.
-//! Intended for `R` types with spare bit patterns, primarily `#[repr(u8)]` enums with fewer than
-//! 256 variants.
+//! Used with `CompactOption` for niche-packing optional storage: `NONE`/`Some(T)` encoded in
+//! exactly as much memory as raw `R`, by reserving one of `R`'s spare bit patterns as the sentinel.
+//! Primarily `#[repr(u8)]` enums with fewer than 256 variants.
 //!
 //! # What this macro does (and does not)
 //!

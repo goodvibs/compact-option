@@ -1,10 +1,8 @@
 # compact-option
 
-[![Crates.io](https://img.shields.io/crates/v/compact-option)](https://crates.io/crates/compact-option)
+[![Crates.io](https://img.shields.io/crates/v/compact-option)](https://crates.io/crates/compact-option) [![Crates.io](https://img.shields.io/crates/v/compact-option-proc-macro)](https://crates.io/crates/compact-option-proc-macro)
 
-[![Crates.io](https://img.shields.io/crates/v/compact-option-proc-macro)](https://crates.io/crates/compact-option-proc-macro)
-
-Workspace for **`compact-option`**: a `Copy` optional that uses exactly as much memory as raw `R` while storing `NONE` or `Some(T)`, under the unsafe `CompactRepr` contract.
+**`compact-option`** is a niche-packing optional: `CompactOption<R, T>` uses exactly as much memory as raw `R` to store either `NONE` or `Some(T)`, where `T: Copy` via the unsafe `CompactRepr` contract.
 It is intended for raw representations `R` with spare bit patterns, with `#[repr(u8)]` enums that have fewer than 256 variants as the primary use case.
 
 ## Crates

@@ -4,8 +4,9 @@
 #![feature(transmutability)]
 #![allow(incomplete_features)]
 
-//! Compact optional storage that uses exactly as much memory as raw `R`: a [`Copy`] `Some` payload
-//! or [`CompactOption::NONE`] inside one raw value `R`, using the unsafe [`CompactRepr`] contract.
+//! Niche-packing optional: [`CompactOption<R, T>`][CompactOption] uses exactly as much memory as
+//! raw `R` to store either [`CompactOption::NONE`] or a `Some(T)` payload, where `T: Copy` via the
+//! unsafe [`CompactRepr`] contract.
 //!
 //! Intended for raw representations `R` with spare bit patterns. Primary use case:
 //! `#[repr(u8)]` enums with fewer than 256 variants.
@@ -93,7 +94,9 @@ pub const unsafe trait CompactRepr<R>: Copy + Sized {
 #[cfg(feature = "macros")]
 pub use compact_option_proc_macro::compact_option;
 
-/// Stores either [`Self::NONE`] or a `Some` payload in a single [`Copy`] `R`.
+/// Niche-packing optional: stores either [`Self::NONE`] or a `Some(T)` payload in exactly as much
+/// memory as raw `R`. `T` must be [`Copy`] (via the [`CompactRepr`] contract); the wrapper itself
+/// is `Copy` whenever `R` and `T` are.
 ///
 /// ## Layout checks
 ///

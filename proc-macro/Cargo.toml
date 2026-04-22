@@ -2,7 +2,7 @@
 name = "compact-option-proc-macro"
 version = { workspace = true }
 edition = { workspace = true }
-description = "Attribute macro for compact-option's exact-size-as-`R` sentinel encoding, intended for `R` with spare bit patterns (primarily `repr(u8)` enums with <256 variants)."
+description = "Attribute macro for compact-option's niche-packing optional; intended for `R` with spare bit patterns (primarily `repr(u8)` enums with <256 variants)."
 license = { workspace = true }
 repository = { workspace = true }
 documentation = "https://docs.rs/compact-option-proc-macro"
