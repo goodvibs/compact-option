@@ -1,0 +1,9 @@
+# https://nexte.st/docs/configuration/
+#
+# Doctests are not run by nextest; CI runs `cargo test --workspace --doc` after
+# `cargo nextest run`. Coverage uses `cargo llvm-cov test` (not `nextest`) so
+# compile_fail doctests stay instrumented.
+
+[profile.default-miri]
+# Miri runs are slow; surface stuck tests without killing too aggressively.
+slow-timeout = { period = "120s", terminate-after = 4 }

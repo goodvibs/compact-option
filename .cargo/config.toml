@@ -1,4 +1,6 @@
 [alias]
+# Unit/integration tests (install: `cargo install cargo-nextest` or use CI).
+nex = "nextest run --workspace"
 # HTML report at target/llvm-cov/html (requires cargo-llvm-cov + llvm-tools-preview).
 cov = "llvm-cov test --workspace --html --doctests"
 cov-open = "llvm-cov test --workspace --html --doctests --open"
